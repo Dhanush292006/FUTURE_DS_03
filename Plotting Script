@@ -1,0 +1,126 @@
+# -------------------------------------------
+# 📊 College Event Feedback – Plotting Script (User Input Version)
+# -------------------------------------------
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# -------------------------------------------
+#  Get CSV File from User
+# -------------------------------------------
+csv_file = input("Enter your CSV file name (example: feedback.csv): ")
+
+try:
+    df = pd.read_csv(csv_file)
+    print("\nCSV loaded successfully!\n")
+    print("Columns found:", list(df.columns))
+except:
+    print("Error: File not found. Please check the file name.")
+    exit()
+
+# -------------------------------------------
+# 1️⃣ LINE CHART – User selects columns
+# -------------------------------------------
+use_line = input("\nDo you want to plot a LINE chart? (yes/no): ").lower()
+
+if use_line == "yes":
+    x_col = input("Enter X-axis column name (e.g., Date): ")
+    y_col = input("Enter Y-axis column name (e.g., Overall_Rating): ")
+
+    if x_col in df.columns and y_col in df.columns:
+        plt.figure(figsize=(10,4))
+        plt.plot(df[x_col], df[y_col], marker='o')
+        plt.title(f"{y_col} Over {x_col}")
+        plt.xlabel(x_col)
+        plt.ylabel(y_col)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
+    else:
+        print("❌ Invalid column names!")
+
+# -------------------------------------------
+# 2️⃣ BAR CHART – User selects columns
+# -------------------------------------------
+use_bar = input("\nDo you want to plot a BAR chart? (yes/no): ").lower()
+
+if use_bar == "yes":
+    x_col = input("Enter X-axis column: ")
+    y_col = input("Enter Y-axis column: ")
+
+    if x_col in df.columns and y_col in df.columns:
+        plt.figure(figsize=(8,4))
+        sns.barplot(data=df, x=x_col, y=y_col)
+        plt.title(f"{y_col} by {x_col}")
+        plt.xticks(rotation=45)
+        plt.show()
+    else:
+        print("❌ Invalid column names!")
+
+# -------------------------------------------
+# 3️⃣ HISTOGRAM – User selects column
+# -------------------------------------------
+use_hist = input("\nDo you want to plot a HISTOGRAM? (yes/no): ").lower()
+
+if use_hist == "yes":
+    col = input("Enter column to plot histogram: ")
+
+    if col in df.columns:
+        plt.figure(figsize=(6,4))
+        plt.hist(df[col], bins=5)
+        plt.title(f"{col} Distribution")
+        plt.xlabel(col)
+        plt.ylabel("Frequency")
+        plt.show()
+    else:
+        print("❌ Column not found!")
+
+# -------------------------------------------
+# 4️⃣ SCATTER PLOT – User selects columns
+# -------------------------------------------
+use_scatter = input("\nDo you want to plot a SCATTER plot? (yes/no): ").lower()
+
+if use_scatter == "yes":
+    x_col = input("Enter X-axis column: ")
+    y_col = input("Enter Y-axis column: ")
+
+    if x_col in df.columns and y_col in df.columns:
+        plt.figure(figsize=(6,4))
+        plt.scatter(df[x_col], df[y_col])
+        plt.title(f"{y_col} vs {x_col}")
+        plt.xlabel(x_col)
+        plt.ylabel(y_col)
+        plt.show()
+    else:
+        print("❌ Invalid column names!")
+
+# -------------------------------------------
+# 5️⃣ HEATMAP – Correlation Map
+# -------------------------------------------
+use_heatmap = input("\nDo you want a HEATMAP of numeric columns? (yes/no): ").lower()
+
+if use_heatmap == "yes":
+    plt.figure(figsize=(8,5))
+    sns.heatmap(df.corr(), annot=True, cmap="Blues")
+    plt.title("Correlation Heatmap")
+    plt.show()
+
+# -------------------------------------------
+# 6️⃣ PIE CHART – Sentiment Distribution
+# -------------------------------------------
+use_pie = input("\nDo you want a PIE CHART? (yes/no): ").lower()
+
+if use_pie == "yes":
+    col = input("Enter column name for pie chart (e.g., Sentiment_Label): ")
+    
+    if col in df.columns:
+        plt.figure(figsize=(6,6))
+        df[col].value_counts().plot.pie(autopct="%1.1f%%")
+        plt.title(f"{col} Distribution")
+        plt.ylabel("")
+        plt.show()
+    else:
+        print("❌ Column not found!")
+
+print("\n🎉 All selected plots completed!")
