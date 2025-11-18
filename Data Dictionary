@@ -1,0 +1,19 @@
+# Data Dictionary
+
+| Column Name        | Description |
+|-------------------|-------------|
+| Timestamp         | Date & time of feedback submission |
+| Name              | Student name (optional) |
+| Department        | Academic department of student |
+| Year              | Year of study |
+| Event_Name        | Name of the event attended |
+| Organization_Rating | Rating (1–5) for event organization |
+| Content_Rating    | Rating (1–5) for event content/quality |
+| Venue_Rating      | Rating (1–5) for event venue/facilities |
+| Speaker_Rating    | Rating (1–5) for speakers/guests |
+| Overall_Rating    | Average satisfaction rating |
+| Likes             | What students liked about the event |
+| Dislikes          | What students disliked |
+| Suggestions       | Improvement ideas from students |
+| Sentiment_Score   | NLP-generated polarity score |
+| Sentiment_Label   | Positive / Neutral / Negative |
