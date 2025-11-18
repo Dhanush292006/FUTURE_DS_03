@@ -1,0 +1,126 @@
+# Install packages (run once)
+!pip install pandas numpy matplotlib seaborn nltk textblob vaderSentiment scikit-learn wordcloud
+
+# If using Colab, uncomment to download NLTK data
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import pandas as pd, numpy as np
+import matplotlib.pyplot as plt, seaborn as sns
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import NMF
+from wordcloud import WordCloud
+import re
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+# ---------- Load data ----------
+df = pd.read_csv('/content/feedback.csv', parse_dates=['submission_date'])
+df.head()
+
+# ---------- Basic cleaning ----------
+df = df.drop_duplicates(subset='response_id')
+df['comments'] = df['comments'].fillna('').astype(str)
+# Optionally drop rows with empty comments
+# df = df[df['comments'].str.strip() != '']
+
+# ---------- Remove PII (example: emails) ----------
+df['comments'] = df['comments'].str.replace(r'\S+@\S+', '[email]', regex=True)
+df['comments'] = df['comments'].str.replace(r'http\S+', '', regex=True)
+
+# ---------- Ratings summary ----------
+print("Responses:", len(df))
+print("Average rating:", df['rating'].mean())
+sns.countplot(x='rating', data=df); plt.title('Rating distribution'); plt.show()
+
+# ---------- NPS (if 0-10 scale) ----------
+# If rating is 0-10: promotors 9-10, passives 7-8, detractors 0-6
+# If rating is 1-5, map to NPS-like groups if desired.
+
+# ---------- Text preprocessing ----------
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'[^a-z0-9\s]', ' ', text)
+    tokens = [w for w in text.split() if w not in stop_words and len(w)>2]
+    tokens = [lemmatizer.lemmatize(t) for t in tokens]
+    return " ".join(tokens)
+
+df['clean_comments'] = df['comments'].apply(clean_text)
+
+# ---------- Sentiment scoring ----------
+analyzer = SentimentIntensityAnalyzer()
+def vader_score(text):
+    return analyzer.polarity_scores(text)['compound']
+
+df['vader_compound'] = df['comments'].apply(vader_score)
+df['textblob_polarity'] = df['comments'].apply(lambda x: TextBlob(x).sentiment.polarity)
+
+# Combine or compare:
+# Label mapping thresholds (tune as needed)
+def sentiment_label_vader(c):
+    if c >= 0.05: return 'positive'
+    if c <= -0.05: return 'negative'
+    return 'neutral'
+
+df['sentiment_vader'] = df['vader_compound'].apply(sentiment_label_vader)
+df['sentiment_textblob'] = df['textblob_polarity'].apply(lambda x: 'positive' if x>0.05 else ('negative' if x<-0.05 else 'neutral'))
+
+# Majority/combined sentiment
+def combined_sentiment(row):
+    scores = [row['vader_compound'], row['textblob_polarity']]
+    # simple heuristic
+    avg = (row['vader_compound'] + row['textblob_polarity'])/2
+    if avg >= 0.05: return 'positive'
+    if avg <= -0.05: return 'negative'
+    return 'neutral'
+
+df['sentiment'] = df.apply(combined_sentiment, axis=1)
+
+# ---------- Visualize sentiment distribution ----------
+sns.countplot(x='sentiment', data=df, order=['positive','neutral','negative'])
+plt.title('Sentiment distribution'); plt.show()
+
+# ---------- Sentiment over time ----------
+df.set_index('submission_date', inplace=False)
+sent_time = df.groupby(pd.Grouper(key='submission_date', freq='W'))['vader_compound'].mean().reset_index()
+plt.figure(figsize=(10,4)); sns.lineplot(data=sent_time, x='submission_date', y='vader_compound'); plt.title('Weekly avg VADER compound'); plt.show()
+
+# ---------- Wordclouds ----------
+pos_text = " ".join(df[df['sentiment']=='positive']['clean_comments'])
+neg_text = " ".join(df[df['sentiment']=='negative']['clean_comments'])
+WordCloud(width=800, height=400).generate(pos_text).to_image()
+# show via matplotlib
+plt.figure(figsize=(10,4)); plt.imshow(WordCloud(width=800,height=400).generate(pos_text), interpolation='bilinear'); plt.axis('off'); plt.title('Positive Comments Wordcloud'); plt.show()
+
+plt.figure(figsize=(10,4)); plt.imshow(WordCloud(width=800,height=400).generate(neg_text), interpolation='bilinear'); plt.axis('off'); plt.title('Negative Comments Wordcloud'); plt.show()
+
+# ---------- Topic modeling (NMF) on negative comments ----------
+neg_corpus = df[df['sentiment']=='negative']['clean_comments']
+tfidf = TfidfVectorizer(max_df=0.95, min_df=2, ngram_range=(1,2))
+tfidf_matrix = tfidf.fit_transform(neg_corpus)
+n_topics = 4
+nmf = NMF(n_components=n_topics, random_state=42)
+W = nmf.fit_transform(tfidf_matrix)
+H = nmf.components_
+terms = tfidf.get_feature_names_out()
+
+def print_top_words(model, feature_names, n_top_words):
+    for topic_idx, topic in enumerate(model.components_):
+        print("Topic #%d:" % topic_idx)
+        print(" ".join([feature_names[i] for i in topic.argsort()[:-n_top_words - 1:-1]]))
+print_top_words(nmf, terms, 10)
+
+# ---------- Representative comments for each topic ----------
+topic_labels = W.argmax(axis=1)
+df_neg = df[df['sentiment']=='negative'].copy()
+df_neg['topic'] = topic_labels
+for t in range(n_topics):
+    print(f"--- Topic {t} sample comments ---")
+    print(df_neg[df_neg['topic']==t]['comments'].head(3).tolist())
