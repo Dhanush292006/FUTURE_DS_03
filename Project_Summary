@@ -1,0 +1,20 @@
+# Project Summary
+
+This project analyzes college event feedback collected through Google Forms.  
+The goal is to uncover satisfaction trends, identify improvement areas, and
+understand student sentiments using data cleaning, sentiment analysis, and
+visualization.
+
+## Objectives
+- Measure student satisfaction levels.
+- Identify positive/negative sentiment patterns.
+- Analyze textual feedback using NLP.
+- Create charts showing participation trends.
+- Suggest data-driven improvements for future events.
+
+## Deliverables
+- Cleaned dataset
+- Sentiment analysis (TextBlob/VADER)
+- Visual charts (seaborn/matplotlib)
+- Insights & recommendations
+- PDF/README/Documentation for GitHub
