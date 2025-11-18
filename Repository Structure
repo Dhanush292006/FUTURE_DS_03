@@ -1,0 +1,14 @@
+college-event-feedback-analysis/
+├─ data/
+│  └─ feedback.csv
+├─ notebooks/
+│  └─ feedback_analysis_colab.ipynb
+├─ charts/
+│  └─ (exported PNG charts)
+├─ docs/
+│  └─ final_report.pdf
+├─ README.md
+├─ data_dictionary.md
+├─ methodology.md
+├─ insights_recommendations.md
+└─ LICENSE
